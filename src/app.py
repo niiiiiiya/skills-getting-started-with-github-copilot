@@ -10,7 +10,7 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, EmailStr
+from pydantic import EmailStr
 
 app = FastAPI(
     title="Mergington High School API",
@@ -20,10 +20,6 @@ app = FastAPI(
 # Mount the static files directory
 current_dir = Path(__file__).parent
 app.mount("/static", StaticFiles(directory=current_dir / "static"), name="static")
-
-
-class SignupRequest(BaseModel):
-    email: EmailStr
 
 
 # In-memory activity database keyed by slug identifier
@@ -63,18 +59,18 @@ def get_activities():
 
 
 @app.post("/activities/{activity_id}/signup")
-def signup_for_activity(activity_id: str, signup: SignupRequest):
+def signup_for_activity(activity_id: str, email: EmailStr):
     """Sign up a student for an activity."""
     if activity_id not in activities:
         raise HTTPException(status_code=404, detail="Activity not found")
 
     activity = activities[activity_id]
 
-    if signup.email in activity["participants"]:
+    if email in activity["participants"]:
         raise HTTPException(status_code=400, detail="Student already signed up")
 
     if len(activity["participants"]) >= activity["max_participants"]:
         raise HTTPException(status_code=400, detail="Activity is full")
 
-    activity["participants"].append(signup.email)
-    return {"message": f"Signed up {signup.email} for {activity['name']}"}
+    activity["participants"].append(email)
+    return {"message": f"Signed up {email} for {activity['name']}"}
